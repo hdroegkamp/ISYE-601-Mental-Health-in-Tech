@@ -1,0 +1,51 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+### Import data
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(stringr)
+OSMI_2016 <- read_csv("OSMI Mental Health in Tech Survey 2016 Prep.csv")
+OSMI_2017 <- read_csv("OSMI Mental Health in Tech Survey 2017 Prep.csv")
+OSMI_2018 <- read_csv("OSMI Mental Health in Tech Survey 2018 Prep.csv")
+```
+
+### Prep data for consistent columns and naming
+```{r}
+# Add columns to 2016 dataset that were missing
+OSMI_2016 <- add_column(OSMI_2016, "What is your race?" = NA, "Overall, how well do you think the tech industry supports employees with mental health issues?" = NA)
+
+# Adjust name of state column for 2018
+OSMI_2018 <- rename(OSMI_2018, "What US state or territory do you work in?" = "What US state or territory do you <strong>work</strong> in?")
+```
+
+### Cleaning function
+```{r}
+clean_data <- function(year_tibble, year_string, column_names) {
+    clean_tbl <- year_tibble %>%
+      select(column_names) %>%
+      mutate(Year = year_string)
+}
+
+col_string <- c("Do you currently have a mental health disorder?", "What is your age?", "What is your gender?", "What US state or territory do you work in?", "What is your race?", "How many employees does your company or organization have?", "Is your employer primarily a tech company/organization?", "Does your employer provide mental health benefits as part of healthcare coverage?", "Has your employer ever formally discussed mental health (for example, as part of a wellness campaign or other official communication)?", "Does your employer offer resources to learn more about mental health disorders and options for seeking help?", "Would you feel comfortable discussing a mental health issue with your direct supervisor(s)?", "Would you feel comfortable discussing a mental health issue with your coworkers?", "How willing would you be to share with friends and family that you have a mental illness?", "Do you feel that your employer takes mental health as seriously as physical health?", "Overall, how well do you think the tech industry supports employees with mental health issues?")
+year_string <- c("2016", "2017", "2018")
+
+# Create list to hold tibble for each year
+OSMI_list <- list(OSMI_2016, OSMI_2017, OSMI_2018)
+
+# Create empty list to hold clean tibbles
+OSMI_list_clean <- vector(mode = "list", length = 3)
+
+for (i in 1:3) {
+  OSMI_list_clean[[i]] <- clean_data(OSMI_list[[i]], year_string[[i]], col_string)
+}
+```
+
+### Combine dataframes
+```{r}
+OSMI <- rbind(OSMI_list_clean[[1]], OSMI_list_clean[[2]], OSMI_list_clean[[3]])
+
+write_csv(OSMI, file.path(getwd(), "OSMI Mental Health in Tech Survey Combined.csv"))
+```
